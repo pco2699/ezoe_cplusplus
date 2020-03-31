@@ -1,4 +1,4 @@
-gcc_options = -std=c++17 -Wall --pedantic-error
+gcc_options = -std=c++17 -Wall --pedantic-errors
 
 program: main.cpp all.h
 	g++ $(gcc_options) -include all.h -o $@ $<

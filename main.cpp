@@ -92,6 +92,11 @@ struct array
         return storage[i] ;
     }
 
+    reference at(std::size_t n) {
+        if (n >= size()) throw std::out_of_range("Error: Out of Range");
+        return storage[n];
+    }
+
 };
 
 template < typename Container >
@@ -103,10 +108,89 @@ void print( Container const & c )
     }
 }
 
+void * memcpy(void * dest, void const * src, std::size_t n) {
+    auto d = static_cast<std::byte *>(dest);
+    auto s = static_cast<std::byte const *>(src);
+
+    for (std::size_t i = 0; i != n; ++i){
+        d[i] = s[i];
+    }
+
+    return dest;
+}
+
+template <typename To, typename From>
+To bit_cast(From const & from) {
+    To to;
+    memcpy(&to, &from, sizeof(To));
+    return to;
+}
+
+template <typename T, typename Allocator = std::allocator<T>>
+class vector {
+    private:
+        // 先頭の要素へのポインター
+        pointer first ;
+        // 最後の要素の1つ前方のポインター
+        pointer last ;
+        // 確保したストレージの終端
+        pointer reserved_last ;
+        // アロケーターの値
+        allocator_type alloc ;
+    public:
+        using value_type = T;
+        using pointer = T *;
+        using const_pointer = const pointer;
+        using reference = value_type &;
+        using const_reference = const value_type &;
+        using allocator_type = Allocator;
+
+        using iterator = pointer;
+        using const_iterator = const_pointer;
+        using reverse_interator = std::reverse_iterator<iterator>;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+        vector(std::size_t n = 0, Allocator a = Allocator());
+        ~vector();
+
+        vector(const vector & x);
+        vector & operator =(const vector & x);
+
+        void push_back(const T & x);
+        T & operator [](std::size_t i) noexcept;
+
+        iterator begin() noexcept {
+            return first;
+        }
+        iterator end() noexcept {
+            return last;
+        }
+
+        const_iterator cbegin() const noexcept {
+            return first;
+        }
+
+        const_iterator cend() const noexcept {
+            return last;
+        }
+
+        reverse_interator rbegin() noexcept {
+            return reverse_iterator{last};
+        }
+
+        reverse_interator rend() noexcept {
+            return reverse_iterator{begin};
+        }
+};
+
 int main()
 {
-    array<int, 5> a = {1, 2, 3, 4, 5};
-    std::for_each(std::begin(a), std::end(a),
-    [](auto x){std::cout << x ;});
+    std::allocator<int> a;
+    using traits = std::allocator_traits<decltype(a)>;
 
+    std::string * p = traits::allocate(a, 1);
+    std::string * s = traits::construct(a, p, "hello");
+
+    traits::destroy(a, s);
+    traits::deallocate(a, p, 1);
 }
