@@ -126,17 +126,8 @@ To bit_cast(From const & from) {
     return to;
 }
 
-template <typename T, typename Allocator = std::allocator<T>>
+template <typename T, typename Allocator = std::allocator<T> >
 class vector {
-    private:
-        // 先頭の要素へのポインター
-        pointer first ;
-        // 最後の要素の1つ前方のポインター
-        pointer last ;
-        // 確保したストレージの終端
-        pointer reserved_last ;
-        // アロケーターの値
-        allocator_type alloc ;
     public:
         using value_type = T;
         using pointer = T *;
@@ -147,9 +138,20 @@ class vector {
 
         using iterator = pointer;
         using const_iterator = const_pointer;
-        using reverse_interator = std::reverse_iterator<iterator>;
+        using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-
+        using size_type =std::size_t;
+    private:
+        // 先頭の要素へのポインター
+        pointer first ;
+        // 最後の要素の1つ前方のポインター
+        pointer last ;
+        // 確保したストレージの終端
+        pointer reserved_last ;
+        // アロケーターの値
+        allocator_type alloc ;
+        
+    public:
         vector(std::size_t n = 0, Allocator a = Allocator());
         ~vector();
 
@@ -174,23 +176,36 @@ class vector {
             return last;
         }
 
-        reverse_interator rbegin() noexcept {
+        reverse_iterator rbegin() noexcept {
             return reverse_iterator{last};
         }
 
-        reverse_interator rend() noexcept {
+        reverse_iterator rend() noexcept {
             return reverse_iterator{begin};
+        }
+
+        const_reverse_iterator crbegin() const noexcept {
+            return reverse_iterator{last};
+        }
+
+        const_reverse_iterator crend() const noexcept {
+            return reverse_iterator{begin};
+        }
+
+        size_type size() const noexcept {
+            return end() - begin();
+        }
+
+        bool empty() const noexcept {
+            return size() == 0;
+        }
+
+        size_type capacity() const noexcept {
+            return reserved_last - first;
         }
 };
 
 int main()
 {
-    std::allocator<int> a;
-    using traits = std::allocator_traits<decltype(a)>;
-
-    std::string * p = traits::allocate(a, 1);
-    std::string * s = traits::construct(a, p, "hello");
-
-    traits::destroy(a, s);
-    traits::deallocate(a, p, 1);
+    return 0;
 }

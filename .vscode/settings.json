@@ -1,6 +1,32 @@
 {
     "files.associations": {
         "*.tidal": "haskell",
-        "istream": "cpp"
+        "istream": "cpp",
+        "array": "cpp",
+        "deque": "cpp",
+        "filesystem": "cpp",
+        "forward_list": "cpp",
+        "iterator": "cpp",
+        "list": "cpp",
+        "map": "cpp",
+        "memory": "cpp",
+        "regex": "cpp",
+        "set": "cpp",
+        "streambuf": "cpp",
+        "unordered_map": "cpp",
+        "unordered_set": "cpp",
+        "vector": "cpp",
+        "xhash": "cpp",
+        "xmemory0": "cpp",
+        "xstring": "cpp",
+        "xtree": "cpp",
+        "xutility": "cpp",
+        "atomic": "cpp",
+        "initializer_list": "cpp",
+        "queue": "cpp",
+        "stack": "cpp",
+        "type_traits": "cpp",
+        "xtr1common": "cpp",
+        "xxatomic": "cpp"
     }
 }
