@@ -1,3 +1,5 @@
+#include "all.h"
+
 template < typename Array >
 struct array_iterator
 {
@@ -140,26 +142,95 @@ class vector {
         using const_iterator = const_pointer;
         using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-        using size_type =std::size_t;
+        using size_type = std::size_t;
     private:
         // 先頭の要素へのポインター
-        pointer first ;
+        pointer first = nullptr;
         // 最後の要素の1つ前方のポインター
-        pointer last ;
+        pointer last = nullptr;
         // 確保したストレージの終端
-        pointer reserved_last ;
+        pointer reserved_last = nullptr;
         // アロケーターの値
-        allocator_type alloc ;
-        
+        allocator_type alloc;
+
+        using traits = std::allocator_traits<allocator_type>;
+
+        pointer allocate(size_type n) {
+            return traits::allocate(alloc, n);
+        }
+        void deallocate() {
+            traits::deallocate(alloc, first, capacity());
+        }
+        void destroy(pointer ptr) {
+            traits::destroy(alloc, ptr);
+        }
+
+        void construct( pointer ptr )
+        { traits::construct( alloc, ptr ) ; }
+        void construct( pointer ptr, const_reference value )
+        { traits::construct( alloc, ptr, value ) ; }
+        // ムーブ用
+        void construct( pointer ptr, value_type && value )
+        { traits::construct( alloc, ptr, std::move(value) ) ; }
+
+        void destroy_until(reverse_iterator rend) {
+            for (auto riter = rbegin(); riter != rend; ++riter, --last) {
+                destroy(&*riter);
+            }
+        }
+
+        void clear() noexcept {
+            destroy_until(rend());
+        }
+
+        void reserve(size_type sz) {
+            if (sz <= capacity())
+                return;
+
+            auto ptr = allocate(sz);
+
+            auto old_first = first;
+            auto old_last = last;
+            auto old_capacity = capacity();
+
+            first = ptr;
+            last = first;
+            reserved_last = first + sz;
+
+
+            for (auto old_iter = old_first; old_iter != old_last; ++old_iter, ++last) {
+                construct(last, std::move(*old_iter));
+            }
+
+            for (auto riter = reverse_iterator(old_last), rend=reverse_iterator(old_first);
+                riter != rend; ++riter) {
+                    destroy(&*riter);
+                }
+            traits::deallocate(alloc, old_first, old_capacity);
+        }
+
     public:
-        vector(std::size_t n = 0, Allocator a = Allocator());
-        ~vector();
+        ~vector(){
+            clear();
+            deallocate();
+        };
+
+        vector(const allocator_type & alloc) noexcept
+        : alloc(alloc) {}
+
+        vector(): vector(allocator_type()) {}
+        vector(size_type size, const allocator_type & alloc = allocator_type())
+            : vector(alloc) {
+                resize(size);
+            }
+
+        vector(size_type size, const_reference value, const allocator_type & alloc = allocator_type())
+            : vector(alloc) {
+                resize(size, value);
+            }
 
         vector(const vector & x);
         vector & operator =(const vector & x);
-
-        void push_back(const T & x);
-        T & operator [](std::size_t i) noexcept;
 
         iterator begin() noexcept {
             return first;
@@ -181,7 +252,7 @@ class vector {
         }
 
         reverse_iterator rend() noexcept {
-            return reverse_iterator{begin};
+            return reverse_iterator{first};
         }
 
         const_reverse_iterator crbegin() const noexcept {
@@ -189,11 +260,11 @@ class vector {
         }
 
         const_reverse_iterator crend() const noexcept {
-            return reverse_iterator{begin};
+            return reverse_iterator{first};
         }
 
         size_type size() const noexcept {
-            return end() - begin();
+            return last - first;
         }
 
         bool empty() const noexcept {
@@ -203,9 +274,66 @@ class vector {
         size_type capacity() const noexcept {
             return reserved_last - first;
         }
+
+        reference operator [](size_type i) {
+            return first[i];
+        }
+
+        const_reference operator [](size_type i ) const {
+            return first[i];
+        }
+
+        void resize(size_type sz) {
+            if (sz < size()) {
+                auto diff = size() - sz;
+                destroy_until(rbegin() + diff);
+                last = first + sz;
+            }
+            else if (sz > size()) {
+                reserve(sz);
+                for (; last != reserved_last; ++last) {
+                    construct(last);
+                }
+            }
+        }
+
+        void resize(size_type sz, const_reference value) {
+            if (sz < size()) {
+                auto diff = size() - sz;
+                destroy_until(rbegin() + diff);
+                last = first + sz;
+            }
+            else if (sz > size()) {
+                reserve(sz);
+                for (; last != reserved_last; ++last) {
+                    construct(last, value);
+                }
+            }
+        }
+
+        void push_back(const_reference value) {
+            if (size() + 1 > capacity()) {
+                auto c = size();
+                if (c == 0)
+                    c = 1;
+                else
+                    c *= 2;
+                reserve(c);
+            }
+            construct(last, value);
+            ++last;
+        }
 };
 
 int main()
 {
-    return 0;
+    vector<int> v(10, 1);
+    v[2] = 99 ;
+    v.resize(5) ;
+    v.push_back(10);
+    for (auto iter = v.begin(); iter != v.end(); ++iter) {
+        std::cout << *iter << std::endl;
+    }
+    std::cout << *(v.end() - 1) << std::endl;
+    
 }
