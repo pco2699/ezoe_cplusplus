@@ -229,6 +229,17 @@ class vector {
                 resize(size, value);
             }
 
+        template<typename InputIterator>
+        vector(InputIterator first, InputIterator last, const Allocator & = Allocator()) {
+            reserve(std::distance(first, last));
+            for (auto i = first; i != last; ++i) {
+                push_back(*i);
+            }
+        }
+
+        vector(std::initializer_list<value_type> init, const Allocator & alloc = Allocator())
+            : vector(std::begin(init), std::end(init), alloc) {}
+
         vector(const vector & x);
         vector & operator =(const vector & x);
 
@@ -327,13 +338,9 @@ class vector {
 
 int main()
 {
-    vector<int> v(10, 1);
-    v[2] = 99 ;
-    v.resize(5) ;
-    v.push_back(10);
+    vector<int> v = {1, 2, 3};
     for (auto iter = v.begin(); iter != v.end(); ++iter) {
         std::cout << *iter << std::endl;
     }
-    std::cout << *(v.end() - 1) << std::endl;
     
 }
